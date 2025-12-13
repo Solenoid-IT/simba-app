@@ -1,0 +1,32 @@
+{
+    "name": "solenoid/simba",
+    "description": "HTTP/CLI framework",
+    "type": "project",
+    "keywords": ["simba","http","cli","framework"],
+    "homepage": "https://github.com/Solenoid-IT/simba",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Pier Niccolò Giannelli",
+            "email": "pierniccologiannelli@gmail.com",
+            "homepage": "https://www.solenoid.it",
+            "role": "Full Stack Web Developer"
+        }
+    ],
+    "require": {
+        "php": ">=7.3.0",
+        "solenoid/x": "^1.0.0",
+        "solenoid/collection": "^1.0.0",
+        "solenoid/encryption": "^1.0.0",
+        "solenoid/keygen": "^1.0.0",
+        "solenoid/network": "^1.0.0",
+        "solenoid/srpc": "^1.0.0",
+        "solenoid/smtp": "^1.0.0",
+        "solenoid/mysql": "^1.0.0",
+        "phpseclib/phpseclib": "~3.0",
+        "textalk/websocket": "^1.5"
+    },
+    "config": {
+        "vendor-dir": "./lib/composer"
+    }
+}

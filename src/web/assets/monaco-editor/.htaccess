@@ -1,0 +1,9 @@
+# CORS
+Header set Access-Control-Allow-Origin "*"
+Header set Access-Control-Allow-Methods "*"
+Header set Access-Control-Allow-headers "*"
+
+
+
+AddType application/javascript .js
+AddType text/css .css

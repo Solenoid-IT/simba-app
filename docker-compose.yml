@@ -1,0 +1,27 @@
+services:
+  simba:
+    build: .
+    container_name: simba
+    restart: unless-stopped
+    working_dir: /app
+    environment:
+      - GIT_WORK_TREE=/workspaces/simba-app
+      - GIT_DIR=/workspaces/simba-app/.git
+      - GIT_DISCOVERY_ACROSS_FILESYSTEM=1
+    ports:
+      - "8090:80"
+      - "8091:443"
+      - "8092:5173"
+      - "3001:3001"
+    volumes:
+      - .:/workspaces/simba-app
+
+      - ./src:/app
+
+      - ./mysql:/var/lib/mysql
+      - ./docker-setup/conf/000-default.conf:/etc/apache2/sites-available/000-default.conf
+      - ./docker-setup/conf/phpmyadmin.conf:/etc/apache2/conf-enabled/phpmyadmin.conf
+      - ./docker-setup/conf/mysqld.cnf:/etc/mysql/mysql.conf.d/mysqld.cnf
+      - ./docker-setup/conf/redis.conf:/etc/redis/redis.conf
+      - ./docker-setup/conf/simba-cron:/etc/cron.d/simba-cron
+      - ./docker-setup/conf/supervisord.conf:/etc/supervisor/conf.d/supervisord.conf

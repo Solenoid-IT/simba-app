@@ -1,0 +1,5 @@
+# (Stopping the container)
+./stop
+
+# (Starting the container)
+./start

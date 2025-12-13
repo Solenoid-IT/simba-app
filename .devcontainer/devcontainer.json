@@ -1,0 +1,16 @@
+{
+    "name": "Simba App",
+    "dockerComposeFile": "../docker-compose.yml",
+    "service": "simba",
+    "workspaceFolder": "/app",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "bmewburn.vscode-intelephense-client",
+                "xdebug.php-debug",
+                "cjhowe7.laravel-blade",
+                "svelte.svelte-vscode"
+            ]
+        }
+    }
+}

@@ -1,0 +1,22 @@
+# Setting the value
+CONTAINER_NAME="simba"
+
+
+
+# Setting the value
+TARGET_PATH="/app"
+
+
+
+# (Accessing to the shell)
+#docker exec -it "$CONTAINER_NAME" bash -c "cd $TARGET_PATH && exec bash"
+
+
+
+if [ -z "$1" ]; then
+    # (Accessing to the shell without a command)
+    docker exec -it -w "$TARGET_PATH" "$CONTAINER_NAME" bash
+else
+    # (Accessing to the shell with a command)
+    docker exec -it -w "$TARGET_PATH" "$CONTAINER_NAME" "$@"
+fi

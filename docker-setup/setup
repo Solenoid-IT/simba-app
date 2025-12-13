@@ -1,0 +1,108 @@
+#!/bin/bash
+
+
+
+# Setting the value
+MYSQL_DIR="/var/lib/mysql"
+
+# (Setting ownership)
+chown -R mysql:mysql "$MYSQL_DIR"
+
+# (Setting permission)
+chown -R mysql:www-data /var/run/mysqld
+chmod -R 770 /var/run/mysqld
+
+# (Adding user to group)
+usermod -a -G mysql www-data
+
+
+
+# (Initializing MySQL server)
+/usr/sbin/mysqld --initialize-insecure --user=mysql --datadir="$MYSQL_DIR"
+
+
+
+# (Starting MySQL server)
+/usr/sbin/mysqld --user=mysql --skip-networking &
+MYSQL_PID=$!
+
+
+
+until mysqladmin ping -h localhost --silent; do
+    # (Waiting for the time)
+    sleep 1
+done
+
+
+
+# (Executing commands)
+mysql -u root -e "CREATE USER '$PMA_USER'@'localhost' IDENTIFIED BY '$PMA_PASS';"
+mysql -u root -e "GRANT ALL PRIVILEGES ON *.* TO '$PMA_USER'@'localhost' WITH GRANT OPTION;"
+mysql -u root -e "FLUSH PRIVILEGES;"
+
+
+
+# Setting the value
+DOCUMENT_ROOT="/app/web"
+
+# (Setting ownership)
+chown -R www-data:www-data "$DOCUMENT_ROOT"
+
+
+
+# Setting the value
+STORAGE_DIR="/app/storage"
+
+# (Making directories)
+mkdir "$STORAGE_DIR"
+mkdir "$STORAGE_DIR/logs"
+mkdir "$STORAGE_DIR/logs/apache"
+
+
+
+# (Creating files)
+touch "$STORAGE_DIR/logs/apache/error.log"
+touch "$STORAGE_DIR/logs/apache/access.log"
+
+
+
+# (Setting ownership)
+chown -R www-data:www-data "$STORAGE_DIR/logs/apache"
+
+
+
+# (Making directory)
+mkdir "/app/views/_cache"
+
+
+
+# (Setting permission)
+chmod -R 777 "/app"
+
+
+
+# (Initializing simba app)
+php /app/x init
+
+# (Migrating database)
+php /app/x db:migrate "local"
+
+# (Inserting default user)
+php /app/x task OnDemand/User.insert "user@domain.tld" "pass" "admin" "simba" 1
+
+# (Generating certificate)
+php /app/x cert:generate
+
+# (Building the SPA)
+php /app/x spa:build
+
+
+
+# (Stopping MySQL server)
+kill $MYSQL_PID
+wait $MYSQL_PID
+
+
+
+# (Starting supervisor)
+exec /usr/bin/supervisord -n -c /etc/supervisor/conf.d/supervisord.conf

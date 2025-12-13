@@ -1,0 +1,19 @@
+if [ "$1" == "-b" ]; then
+    # (Getting the value)
+    NOCACHE_FLAG="$2"
+
+
+
+    # Docs :: Executing the build without cache
+    # docker-compose build --no-cache
+
+
+
+    # (Building the image)
+    docker-compose build $NOCACHE_FLAG
+fi
+
+
+
+# (Running the container)
+docker-compose up -d

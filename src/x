@@ -1,0 +1,1044 @@
+#!/usr/bin/php
+<?php
+
+
+
+// (Setting the value)
+error_reporting( E_ERROR );
+
+
+
+// (Setting the values)
+$helper =
+    <<<EOD
+
+
+    AVAILABLE COMMANDS
+
+
+    x install
+
+    x init
+
+    x make:model {path}
+    x make:service {path}
+    x make:middleware {path}
+    x make:task {path}
+    x make:controller {path}
+    x make:migration {project_name} {migration_name}?
+
+    x cert:generate
+
+    x db:migrate {project_name} {direction=up|down}? {id}?
+
+    x spa:dev
+    x spa:build
+
+    x deploy
+
+    x redis:find {prefix}?
+    x redis:flush
+
+    x apidoc:build
+
+    x task {path}[?.method] ...{args}
+
+    x perm:restore
+
+    x schedule:run
+
+
+
+    EOD
+;
+
+
+
+// Returns [assoc]
+function get_envs ()
+{
+    // (Including the file)
+    include_once( __DIR__ . '/autoload.php' );
+
+
+
+    // (Getting the value)
+    $env = new \Solenoid\X\Env( __DIR__ . '/.env' );
+
+
+
+    // (Getting the value)
+    $envs =
+    [
+        'APP_NAME' => $env->get( 'APP_NAME' )
+    ]
+    ;
+
+
+
+    // Returning the value
+    return $envs;
+}
+
+
+
+function get_cli_user ()
+{
+    // (Getting the value)
+    $real_user = getenv( 'SUDO_USER' );
+
+    if ( $real_user )
+    {// Value found
+        // (Getting the value)
+        $cli_user = $real_user;
+    }
+    else
+    {// Value not found
+        // (Getting the value)
+        $cli_user = posix_getpwuid( posix_getuid() )['name'];
+    }
+
+
+
+    // Returning the value
+    return $cli_user;
+}
+
+
+
+function set_perms (string $cli_user, string $http_user)
+{
+    // (Getting the value)
+    $logs_basedir = __DIR__ . '/storage/logs/app';
+
+
+
+    // (Executing the commands)
+    system( "mkdir -p $logs_basedir" );
+    system( "mkdir $logs_basedir/cli" );
+    system( "mkdir $logs_basedir/http" );
+    system( "chown -R $cli_user:$http_user $logs_basedir" );
+    system( "find $logs_basedir -type d -exec chmod 775 {} +" );
+    system( "find $logs_basedir -type f -exec chmod 664 {} +" );
+}
+
+
+
+// (Getting the values)
+$cli_user  = get_cli_user();
+$http_user = 'www-data';
+
+
+
+switch ( $argv[1] )
+{ 
+    case 'install':
+        // (Setting the cwd)
+        chdir( __DIR__ );
+
+
+
+        // (Executing commands)
+        system('composer update');
+        system('composer install');
+        system('composer dump-autoload');
+    break;
+
+    case 'init':
+        // (Setting the cwd)
+        chdir( __DIR__ );
+
+
+
+        // (Executing the cmd)
+        system( 'php x install' );
+
+
+
+        // (Setting the cwd)
+        chdir( __DIR__ . '/spa' );
+
+        // (Executing the cmds)
+        system( 'rm -rf "' . __DIR__ . '/spa/node_modules"' );
+        system( 'npm install' );
+
+
+
+        // (Setting the cwd)
+        chdir( __DIR__ );
+
+        // (Executing the commands)
+        system( 'touch ' . __DIR__ . '/db_connections/local/head' );
+        system( 'cat "" > ' . __DIR__ . '/db_connections/local/head' );
+
+
+
+        // (Setting the cwd)
+        chdir( __DIR__ . '/micro/alert' );
+
+        // (Executing the commands)
+        system( 'npm install' );
+
+
+
+        // (Setting the cwd)
+        chdir( __DIR__ );
+
+
+
+        // (Getting the values)
+        #$file_owner = posix_getpwuid( fileowner( __DIR__ . '/.env.demo' ) )['name'];
+        #$file_group = posix_getgrgid( filegroup( __DIR__ . '/.env.demo' ) )['name'];
+
+
+
+        if ( !file_exists( __DIR__ . '/.env' ) )
+        {// (File not found)
+            // (Executing the command)
+            system( 'cp -a .env.demo .env' );
+        }
+
+
+
+        // (Executing the command)
+        #system( "sudo chown $file_owner:$file_group .env" );
+        system( 'chmod 644 .env' );
+
+
+
+        // (Setting the permissions)
+        set_perms( $cli_user, $http_user );
+    
+
+
+        // Printing the value
+        echo "\n\nApp has been initialized at '" . __DIR__ . "'\n\n\n";
+    break;
+
+
+
+    case 'make:model':
+        // (Including the file)
+        include_once( __DIR__ . '/autoload.php' );
+
+
+
+        // (Getting the value)
+        $storage = new \Solenoid\X\Storage( __DIR__ . '/app/Models' );
+
+
+
+        // (Getting the value)
+        $id = $argv[2];
+
+
+
+        // (Getting the value)
+        $file_path = "/$id.php";
+
+        if ( $storage->file_exists( $file_path ) )
+        {// (File found)
+            // Printing the value
+            echo "\n\nCannot create the model :: File '{$storage}{$file_path}' already exists !\n\n\n";
+
+            // Closing the process
+            exit;
+        }
+
+
+
+        // (Getting the values)
+        $parts        = explode( '/', $id );
+        $class_name   = $parts[ count( $parts ) - 1 ];
+        $class_path   = count( $parts ) === 1 ? '' : '\\' . implode( '\\', array_slice( $parts, 0, count( $parts ) - 1 ) );
+        $file_content =
+            <<<EOD
+            <?php
+
+
+
+            namespace App\Models$class_path;
+
+
+
+            use \Solenoid\MySQL\Model;
+            use \Solenoid\MySQL\Key;
+
+
+
+            #[ Key( 'name', [ 'tenant', 'name' ] ) ]
+            class $class_name extends Model
+            {
+                public string \$connection_id = 'local';
+                public string \$database      = 'simba_app';
+                public string \$table         = 'table_name';
+            }
+
+
+
+            ?>
+            EOD
+        ;
+
+
+
+        if ( !$storage->write( $file_path, $file_content ) )
+        {// (Unable to write to the file)
+            // (Setting the value)
+            $message = "Unable to write to the file '{$storage}{$file_path}'";
+
+            // Throwing an exception
+            throw new \Exception($message);
+
+            // Closing the process
+            exit;
+        }
+
+
+
+        // (Executing the command)
+        system( "chown -R " . fileowner( __FILE__ ) . " $storage" );
+
+
+
+        // Printing the value
+        echo "\n\nFile `{$storage}{$file_path}` has been created !\n\n\n";
+    break;
+
+    case 'make:service':
+        // (Including the file)
+        include_once( __DIR__ . '/autoload.php' );
+
+
+
+        // (Getting the value)
+        $storage = new \Solenoid\X\Storage( __DIR__ . '/app/Services' );
+
+
+
+        // (Getting the value)
+        $id = $argv[2];
+
+
+
+        // (Getting the value)
+        $file_path = "/$id.php";
+
+        if ( $storage->file_exists( $file_path ) )
+        {// (File found)
+            // Printing the value
+            echo "\n\nCannot create the service :: File '{$storage}{$file_path}' already exists !\n\n\n";
+
+            // Closing the process
+            exit;
+        }
+
+
+
+        // (Getting the values)
+        $parts        = explode( '/', $id );
+        $class_name   = $parts[ count( $parts ) - 1 ];
+        $class_path   = count( $parts ) === 1 ? '' : '\\' . implode( '\\', array_slice( $parts, 0, count( $parts ) - 1 ) );
+        $file_content =
+            <<<EOD
+            <?php
+
+
+
+            namespace App\Services$class_path;
+
+
+
+            use \Solenoid\X\Error;
+
+
+
+            class $class_name
+            {
+                public function sum (int \$a, int \$b) : int
+                {
+                    // Returning the value
+                    return \$a + \$b;
+                }
+
+                public function concat (string \$a, string \$b) : string
+                {
+                    // Returning the value
+                    return \$a . \$b;
+                }
+
+                public function fetch_timestamp () : int
+                {
+                    // Returning the value
+                    return time();
+                }
+
+                public function verify_api_token () : null|Error
+                {
+                    // (Getting the value)
+                    \$header = request()->get_header( 'Authorization' );
+
+                    if ( !\$header )
+                    {// (Header not found)
+                        // Throwing the exception
+                        throw error( 6100, 'User not authorized' );
+                    }
+
+
+
+                    // (Getting the value)
+                    [ \$auth_type, \$auth_token ] = explode( ' ', \$header, 2 );
+
+                    if ( \$auth_type !== 'Bearer' )
+                    {// Match failed
+                        // Throwing the exception
+                        throw error( 6100, 'User not authorized' );
+                    }
+
+
+
+                    if ( !hash_equals( env( 'API_TOKEN' ), \$auth_token ) )
+                    {// Match failed
+                        // Throwing the exception
+                        throw error( 6100, 'User not authorized' );
+                    }
+
+
+
+                    // Returning the value
+                    return null;
+                }
+            }
+
+
+
+            ?>
+            EOD
+        ;
+
+
+
+        if ( !$storage->write( $file_path, $file_content ) )
+        {// (Unable to write to the file)
+            // (Setting the value)
+            $message = "Unable to write to the file '{$storage}{$file_path}'";
+
+            // Throwing an exception
+            throw new \Exception($message);
+
+            // Closing the process
+            exit;
+        }
+
+
+
+        // (Executing the command)
+        system( "chown -R " . fileowner( __FILE__ ) . " $storage" );
+
+
+
+        // Printing the value
+        echo "\n\nFile `{$storage}{$file_path}` has been created !\n\n\n";
+    break;
+
+    case 'make:middleware':
+        // (Including the file)
+        include_once( __DIR__ . '/autoload.php' );
+
+
+
+        // (Getting the value)
+        $storage = new \Solenoid\X\Storage( __DIR__ . '/app/Middlewares' );
+
+
+
+        // (Getting the value)
+        $id = $argv[2];
+
+
+
+        // (Getting the value)
+        $file_path = "/$id.php";
+
+        if ( $storage->file_exists( $file_path ) )
+        {// (File found)
+            // Printing the value
+            echo "\n\nCannot create the middleware :: File '{$storage}{$file_path}' already exists !\n\n\n";
+
+            // Closing the process
+            exit;
+        }
+
+
+
+        // (Getting the values)
+        $parts        = explode( '/', $id );
+        $class_name   = $parts[ count( $parts ) - 1 ];
+        $class_path   = count( $parts ) === 1 ? '' : '\\' . implode( '\\', array_slice( $parts, 0, count( $parts ) - 1 ) );
+        $file_content =
+            <<<EOD
+            <?php
+
+
+
+            namespace App\Middlewares$class_path;
+
+
+
+            use \Solenoid\X\HTTP\Request;
+
+            use \App\Services\Test as TestService;
+
+
+
+            class $class_name
+            {
+                public function handle (Request \$request, \$next, TestService \$test)
+                {
+                    // (Getting the value)
+                    \$error = \$test->verify_api_token();
+
+                    // Returning the value
+                    return \$error ?? \$next( \$request );
+                }
+            }
+
+
+
+            ?>
+            EOD
+        ;
+
+
+
+        if ( !$storage->write( $file_path, $file_content ) )
+        {// (Unable to write to the file)
+            // (Setting the value)
+            $message = "Unable to write to the file '{$storage}{$file_path}'";
+
+            // Throwing an exception
+            throw new \Exception($message);
+
+            // Closing the process
+            exit;
+        }
+
+
+
+        // (Executing the command)
+        system( "chown -R " . fileowner( __FILE__ ) . " $storage" );
+
+
+
+        // Printing the value
+        echo "\n\nFile `{$storage}{$file_path}` has been created !\n\n\n";
+    break;
+
+    case 'make:task':
+        // (Including the file)
+        include_once( __DIR__ . '/autoload.php' );
+
+
+
+        // (Getting the value)
+        $storage = new \Solenoid\X\Storage( __DIR__ . '/app/Tasks' );
+
+
+
+        // (Getting the value)
+        $id = $argv[2];
+
+
+
+        // (Getting the value)
+        $file_path = "/$id.php";
+
+        if ( $storage->file_exists( $file_path ) )
+        {// (File found)
+            // Printing the value
+            echo "\n\nCannot create the task :: File '{$storage}{$file_path}' already exists !\n\n\n";
+
+            // Closing the process
+            exit;
+        }
+
+
+
+        // (Getting the values)
+        $parts        = explode( '/', $id );
+        $class_name   = $parts[ count( $parts ) - 1 ];
+        $class_path   = count( $parts ) === 1 ? '' : '\\' . implode( '\\', array_slice( $parts, 0, count( $parts ) - 1 ) );
+        $file_content =
+            <<<EOD
+            <?php
+
+
+
+            namespace App\Tasks$class_path;
+
+
+
+            class $class_name
+            {
+                public function run ()
+                {
+                    // Printing the value
+                    echo command();
+
+
+
+                    # php x task $id
+                }
+
+
+
+                public function custom_1 ()
+                {
+                    // Printing the value
+                    echo __FUNCTION__ . "\\n";
+                }
+
+                public function custom_2 ()
+                {
+                    // Printing the value
+                    echo __FUNCTION__ . "\\n";
+                }
+            }
+
+
+
+            ?>
+            EOD
+        ;
+
+
+
+        if ( !$storage->write( $file_path, $file_content ) )
+        {// (Unable to write to the file)
+            // (Setting the value)
+            $message = "Unable to write to the file '{$storage}{$file_path}'";
+
+            // Throwing an exception
+            throw new \Exception($message);
+
+            // Closing the process
+            exit;
+        }
+
+
+
+        // (Executing the command)
+        system( "chown -R " . fileowner( __FILE__ ) . " $storage" );
+
+
+
+        // Printing the value
+        echo "\n\nFile `{$storage}{$file_path}` has been created !\n\n\n";
+    break;
+
+    case 'make:controller':
+        // (Including the file)
+        include_once( __DIR__ . '/autoload.php' );
+
+
+
+        // (Getting the value)
+        $storage = new \Solenoid\X\Storage( __DIR__ . '/app/Controllers' );
+
+
+
+        // (Getting the value)
+        $id = $argv[2];
+
+
+
+        // (Getting the value)
+        $file_path = "/$id.php";
+
+        if ( $storage->file_exists( $file_path ) )
+        {// (File found)
+            // Printing the value
+            echo "\n\nCannot create the controller :: File '{$storage}{$file_path}' already exists !\n\n\n";
+
+            // Closing the process
+            exit;
+        }
+
+
+
+        // (Getting the values)
+        $parts        = explode( '/', $id );
+        $class_name   = $parts[ count( $parts ) - 1 ];
+        $class_path   = count( $parts ) === 1 ? '' : '\\' . implode( '\\', array_slice( $parts, 0, count( $parts ) - 1 ) );
+        $file_content =
+            <<<EOD
+            <?php
+
+
+
+            namespace App\Controllers$class_path;
+
+
+
+            use \App\Services\Test as TestService;
+
+
+
+            class $class_name
+            {
+                public function handle_request (int \$a, int \$b, TestService \$test)
+                {
+                    // Returning the value
+                    return \$test->sum( \$a, \$b );
+                }
+            }
+
+
+
+            ?>
+            EOD
+        ;
+
+
+
+        if ( !( $storage )->write( $file_path, $file_content ) )
+        {// (Unable to write to the file)
+            // (Setting the value)
+            $message = "Unable to write to the file '{$storage}{$file_path}'";
+
+            // Throwing an exception
+            throw new \Exception($message);
+
+            // Closing the process
+            exit;
+        }
+
+
+
+        // (Executing the command)
+        system( "chown -R " . fileowner( __FILE__ ) . " $storage" );
+
+
+
+        // Printing the value
+        echo "\n\nFile `{$storage}{$file_path}` has been created !\n\n\n";
+    break;
+
+    case 'make:migration':
+        // (Getting the values)
+        $project_name = $argv[2];
+        $name         = isset( $argv[3] ) ? $argv[3] : '';
+
+
+
+        // (Getting the value)
+        $basedir = __DIR__ . "/db_connections/$project_name";
+
+
+
+        // (Getting the value)
+        $migration_folder_path = "$basedir/migrations/" . date( 'Ymd_His' ) . ( $name ? " $name" : '' );
+
+        if ( !mkdir( $migration_folder_path, 0777, true ) )
+        {// (Unable to make the directory)
+            // Printing the value
+            echo "\n\nProject '$project_name' :: Unable to make the directory '$migration_folder_path' !\n\n\n";
+
+            // Closing the process
+            exit;
+        }
+
+
+
+        // (Getting the value)
+        $up_file_path = "$migration_folder_path/up.sql";
+
+        if ( file_put_contents( $up_file_path, 'USE `{db_name}`;' ) === false )
+        {// (Unable to write to the file)
+            // Printing the value
+            echo "\n\nProject '$project_name' :: Unable to write to the file '$up_file_path' !\n\n\n";
+
+            // Closing the process
+            exit;
+        }
+
+
+
+        // (Getting the value)
+        $down_file_path = "$migration_folder_path/down.sql";
+
+        if ( file_put_contents( $down_file_path, 'USE `{db_name}`;' ) === false )
+        {// (Unable to write to the file)
+            // Printing the value
+            echo "\n\nProject '$project_name' :: Unable to write to the file '$down_file_path' !\n\n\n";
+
+            // Closing the process
+            exit;
+        }
+
+
+
+        // (Executing the command)
+        system( "chown -R " . fileowner( __FILE__ ) . " \"$migration_folder_path\"" );
+
+
+
+        // (Getting the value)
+        $head_file_path = "$basedir/head";
+
+        if ( !file_exists( $head_file_path ) )
+        {// (File not found)
+            // (Executing the command)
+            system( "touch \"$head_file_path\"" );
+        }
+
+
+
+        // (Getting the value)
+        $config_file_path = "$basedir/config.json";
+
+        if ( !file_exists( $config_file_path ) )
+        {// (File not found)
+            // (Executing the command)
+            system( "touch \"$config_file_path\"" );
+
+            // (Writing to the file)
+            file_put_contents( $config_file_path, json_encode( [ 'connection_id' => $project_name, 'db_name' => 'db' ], JSON_PRETTY_PRINT ) );
+        }
+
+
+
+        // Printing the value
+        echo "\n\nDirectory `$migration_folder_path` has been created !\n\n\n";
+    break;
+
+
+
+    case 'cert:generate':
+        // (Setting the cwd)
+        chdir( __DIR__ );
+
+        // (Executing the commands)
+        system( 'mkdir ' . __DIR__ . '/storage/cert' );
+        system( 'rm -rf ' . __DIR__ . '/storage/cert/*' );
+        system( 'openssl req -x509 -newkey rsa:2048 -nodes -keyout storage/cert/simba.key -out storage/cert/simba.crt -days 365 -subj "/C=IT/ST=Piedmont/L=Turin/O=Simba/CN=simba.dev"' );
+        system( 'chown -R www-data:www-data storage/cert' );
+        system( 'chmod -R 770 storage/cert' );
+    break;
+
+
+
+    case 'db:migrate':
+        // (Getting the values)
+        $project_name = '"' . $argv[2] . '"';
+        $direction    = isset( $argv[3] ) ? $argv[3] : 'up';
+        $id           = isset( $argv[4] ) ? $argv[4] : null;
+
+        if ( !in_array( $direction, [ 'up', 'down' ] ) )
+        {// (Invalid value)
+            // Printing the value
+            echo "\n\nInvalid migration direction '$direction' !\n\n\n";
+
+            // Closing the process
+            exit;
+        }
+
+
+
+        // (Setting the cwd)
+        chdir( __DIR__ );
+
+
+
+        // (Getting the value)
+        $args = implode( ' ', array_filter( [ $project_name, $direction, $id ], function ($arg) { return $arg !== null; } ) );
+
+
+
+        // (Executing the command)
+        system( "php x task OnDemand/DbMigrate $args" );
+    break;
+
+
+
+    case 'spa:dev':
+        // (Registering the shutdown function)
+        register_shutdown_function
+        (
+            function ()
+            {
+                // (Setting the cwd)
+                chdir( __DIR__ );
+
+                // (Executing the cmd)
+                system( 'php x spa:build' );
+            }
+        )
+        ;
+
+
+
+        // (Printing the value)
+        echo "\n\nApp -> https://localhost:8092\n\n\n";
+
+
+
+        // (Setting the cwd)
+        chdir( __DIR__ . '/spa' );
+
+
+
+        // (Executing the command)
+        #system("npm run dev -- --open --port 3000");
+        #system("npm run dev -- --open");
+        system( 'npm run dev' );
+    break;
+
+    case 'spa:build':
+        // (Setting the cwd)
+        chdir( __DIR__ . '/spa' );
+
+
+
+        // (Executing the cmd)
+        system( 'npm run build' );
+
+
+
+        // (Getting the value)
+        $build_folder_path = json_decode( file_get_contents( __DIR__ . '/spa/config.json' ), true )['build_path'];
+
+
+
+        // (Getting the value)
+        $envs = get_envs();
+
+
+
+        // (Including the file)
+        include_once( __DIR__ . '/autoload.php' );
+
+
+
+        // (Getting the value)
+        $file_path_list = \Solenoid\System\Directory::select( $build_folder_path )->list( 0, '/\.html$/' );
+
+        foreach ( $file_path_list as $file_path )
+        {// Processing each entry
+            // (Getting the value)
+            $file_content = file_get_contents( $file_path );
+
+
+
+            // (Replacing the text)
+            #$file_content = preg_replace( '/\.?\/_svelte/', 'https://' . $envs['APP_FQDN'] . '/build/_svelte', $file_content );
+
+
+
+            // (Getting the value)
+            $blade_file_path = preg_replace( '/\.html$/', '.blade.php', $file_path );
+
+
+
+            // (Writing the content to the file)
+            \Solenoid\System\File::select( $blade_file_path )->write( $file_content );
+        }
+
+
+
+        // (Printing the value)
+        echo "\n\nApp -> https://localhost:8091\n\n\n";
+    break;
+
+
+
+    case 'deploy':
+        // (Executing the command)
+        system( 'php x task OnDemand/Deploy' );
+    break;
+
+
+
+    case 'redis:find':
+        // (Getting the value)
+        $prefix = $argv[2] ?? '*';
+
+
+
+        # 'php x redis:find "ip:*"'
+
+
+
+        // (Executing the command)
+        system( "redis-cli KEYS \"$prefix\"" );
+    break;
+
+    case 'redis:flush':
+        // (Executing the command)
+        system( 'redis-cli FLUSHALL' );
+    break;
+
+
+
+    case 'apidoc:build':
+        // (Setting the cwd)
+        chdir( __DIR__ );
+
+        // (Executing the command)
+        system( 'php x task OnDemand/ApiDoc > storage/apidoc.html' );
+    break;
+
+
+
+    case 'task':
+        if ( count( $argv ) === 2 )
+        {// (There are no args)
+            // Printing the value
+            echo $helper;
+
+            // Closing the process
+            exit;
+        }
+
+
+
+        // (Setting the cwd)
+        chdir( __DIR__ );
+
+
+
+        // (Getting the value)
+        $args = $argv;
+        $args = array_splice( $args, 2 );
+        $args = implode( ' ', $args );
+
+
+
+        // (Executing the command)
+        system( "php boot.php $args" );
+    break;
+
+
+
+    case 'perm:restore':
+        // (Setting the permissions)
+        set_perms( $cli_user, $http_user );
+    break;
+
+
+
+    case 'schedule:run':
+        // (Executing the command)
+        system( "php boot.php Scheduler" );
+    break;
+
+
+
+    default:
+        // Printing the value
+        echo $helper;
+}
+
+
+
+?>

@@ -1,0 +1,2 @@
+# EVERY 1 MINUTE
+* * * * * cd /app && /usr/bin/php /app/x schedule:run >> /var/log/cron.log 2>&1

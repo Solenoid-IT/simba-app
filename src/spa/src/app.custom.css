@@ -1,0 +1,33 @@
+.top-label
+{
+    padding: 2px 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #9b9b9b;
+    background-color: #dbdbdb;
+    border-radius: 4px;
+
+    box-shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px;
+
+    position: relative;
+    bottom: 3px;
+}
+
+
+
+.wrapper
+{
+    display: flex;
+}
+
+.wrapper .content-wrapper
+{
+	width: 100%;
+	background-color: #f8f9fc;
+	overflow-x: hidden;
+}
+
+.wrapper .content-wrapper .content
+{
+	flex: 1 0 auto;
+}

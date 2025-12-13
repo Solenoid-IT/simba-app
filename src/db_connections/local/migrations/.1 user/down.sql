@@ -1,0 +1,1 @@
+DROP USER '{db_user}'@'localhost';
