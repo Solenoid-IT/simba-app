@@ -215,4 +215,27 @@ Manage SEO settings via templates in `/views/dynamic_files/`:
 2.  `sitemap.xml.blade.php`
 
 ---
-<p align="center">Solenoid IT - 2026</p>
+
+## ⚖️ License & Trademark
+
+### Software License
+Simba Framework is open-source software licensed under the [Apache License, Version 2.0](LICENSE). 
+
+**What this means:**
+* **Commercial Use:** You can use Simba to build and sell your own commercial applications or SaaS.
+* **Modification:** You can modify the source code, but you must include the original copyright notice.
+* **Patent Protection:** This license includes an explicit grant of patent rights from contributors to users, providing a robust legal shield for professional and enterprise environments.
+
+### Trademark Policy
+**Solenoid-IT™**, **Simba™**, and **sRPC™** are trademarks of **Solenoid-IT**. 
+
+While the source code is free to use and modify, the names, logos, and brand identity are not part of the Apache license. 
+* You **may** say your project is "Built with Simba" or "Powered by Solenoid-IT".
+* You **may not** use these names or logos in a way that implies an official endorsement, partnership, or ownership by Solenoid-IT without prior written consent.
+
+---
+
+<p align="center">
+  <b>Solenoid-IT</b> &copy; 2026 — <a href="https://solenoid.it">solenoid.it</a><br>
+  <i>Crafting scalable architecture for modern developers.</i>
+</p>
