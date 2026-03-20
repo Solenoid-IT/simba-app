@@ -150,7 +150,7 @@ switch ( $argv[1] )
 
 
 
-        // (Executing the cmd)
+        // (Executing the command)
         system( 'php x install' );
 
 
@@ -158,7 +158,7 @@ switch ( $argv[1] )
         // (Setting the cwd)
         chdir( __DIR__ . '/spa' );
 
-        // (Executing the cmds)
+        // (Executing the commands)
         system( 'rm -rf "' . __DIR__ . '/spa/node_modules"' );
         system( 'npm install' );
 
@@ -167,9 +167,17 @@ switch ( $argv[1] )
         // (Setting the cwd)
         chdir( __DIR__ );
 
-        // (Executing the commands)
-        system( 'touch ' . __DIR__ . '/db_connections/local/head' );
-        system( 'cat "" > ' . __DIR__ . '/db_connections/local/head' );
+
+
+        // (Getting the value)
+        $head_file_path = __DIR__ . '/db_connections/local/head';
+
+        if ( !file_exists( $head_file_path ) )
+        {// (File not found)
+            // (Executing the commands)
+            system( 'touch ' . $head_file_path );
+            system( 'cat "" > ' . $head_file_path );
+        }
 
 
 
