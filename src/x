@@ -27,7 +27,7 @@ $helper =
     x make:controller {path}
     x make:migration {project_name} {migration_name}?
 
-    x cert:generate
+    x cert:generate {force}?
 
     x db:migrate {project_name} {direction=up|down}? {id}?
 
@@ -216,7 +216,7 @@ switch ( $argv[1] )
 
         // (Setting the permissions)
         set_perms( $cli_user, $http_user );
-    
+
 
 
         // Printing the value
@@ -826,12 +826,67 @@ switch ( $argv[1] )
         // (Setting the cwd)
         chdir( __DIR__ );
 
+
+
+        // (Getting the values)
+        $key_file_path = __DIR__ . '/storage/cert/simba.key';
+        $crt_file_path = __DIR__ . '/storage/cert/simba.crt';
+
+
+
+        // (Setting the values)
+        $bit_depth     = 2048;
+        $duration_days = 365;
+
+
+
+        function cert_get_expire_time (string $file_path) : int
+        {
+            // (Getting the value)
+            $output = shell_exec( "openssl x509 -in $file_path -noout -enddate" );
+
+
+
+            // Returning the value
+            return strtotime( str_replace( 'notAfter=', '', $output ) );
+        }
+
+
+
+        if ( !isset( $argv[2] ) )
+        {// (Force flag is not present)
+            if ( file_exists( $crt_file_path ) )
+            {// (File found)
+                // (Getting the value)
+                $expire_time = cert_get_expire_time( $crt_file_path );
+
+                if ( time() < $expire_time )
+                {// (Certificate is still valid)
+                    // Printing the value
+                    echo "\n\nCertificate will expire at '" . date( 'c', $expire_time ) . "' :: Still valid, no need to generate a new one !\n\n\n";
+
+
+
+                    // Returning the value
+                    return;
+                }
+            }
+        }
+
+
+
         // (Executing the commands)
         system( 'mkdir ' . __DIR__ . '/storage/cert' );
         system( 'rm -rf ' . __DIR__ . '/storage/cert/*' );
-        system( 'openssl req -x509 -newkey rsa:2048 -nodes -keyout storage/cert/simba.key -out storage/cert/simba.crt -days 365 -subj "/C=IT/ST=Piedmont/L=Turin/O=Simba/CN=simba.dev"' );
+        system( "openssl req -x509 -newkey rsa:$bit_depth -nodes -keyout $key_file_path -out $crt_file_path -days $duration_days -subj \"/C=IT/ST=Piedmont/L=Turin/O=Simba/CN=simba.dev\"" );
         system( 'chown -R www-data:www-data storage/cert' );
         system( 'chmod -R 770 storage/cert' );
+
+
+
+        // Printing the values
+        echo "\n\nCertificate has been generated !\n\n\n";
+        echo "Expiration Time = " . date( 'c', cert_get_expire_time( $crt_file_path ) ) . "\n\n\n";
     break;
 
 
