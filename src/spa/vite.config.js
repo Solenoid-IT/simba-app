@@ -83,12 +83,28 @@ export default defineConfig({
 				'changeOrigin': true,
 				'secure':       false,
 				'ws':		    true,
+				'xfwd':         true,
 				'configure': (proxy, _options) => {
 					proxy.on('error', (err, _req, _res) => {
 						console.log('Proxy Error ::', err);
 					});
 					proxy.on('proxyReq', (proxyReq, req, _res) => {
 						console.log( "Proxying '/micro' :: ", req.method, req.url );
+
+
+
+						/* unused for now, but maybe useful in the future for logging or security purposes
+
+						// (Getting the value)
+						const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+
+						if ( clientIp )
+						{// Value found
+							// (Setting the header)
+							proxyReq.setHeader( 'X-Forwarded-For', clientIp );
+						}
+
+						*/
 					});
 				},
 			}
