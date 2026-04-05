@@ -767,8 +767,12 @@ class User extends Entity
 
 
 
+            // (Getting the values)
+            $target = message_target( $this->user->tenant, [ $this->user->id ], [ 1 ] );
+            $event  = message_event( 'activity', $record );
+
             // (Sending the message)
-            websocket_send( json_encode( $record ) );
+            message_send( message( $target, $event ) );
 
 
 
@@ -974,8 +978,12 @@ class User extends Entity
 
 
 
+            // (Getting the values)
+            $target = message_target( $this->user->tenant, [ $this->user->id ], [ 1 ] );
+            $event  = message_event( 'activity', $record );
+
             // (Sending the message)
-            websocket_send( json_encode( $record ) );
+            message_send( message( $target, $event ) );
 
 
 

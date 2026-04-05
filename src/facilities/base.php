@@ -51,6 +51,10 @@ use \App\User;
 
 use \App\Models\User as UserModel;
 
+use \App\Message\Message;
+use \App\Message\Target;
+use \App\Message\Event;
+
 
 
 function app () : App
@@ -269,6 +273,32 @@ function websocket_send (string $message) : bool
         // Returning the value
         return false;
     }
+}
+
+
+
+function message_target (int $tenant, array $users = [], array $hierarchies = []) : Target
+{
+    // Returning the value
+    return new Target( $tenant, $users, $hierarchies );
+}
+
+function message_event (string $type, array $data = []) : Event
+{
+    // Returning the value
+    return new Event( $type, $data );
+}
+
+function message (Target $target, Event $event) : Message
+{
+    // Returning the value
+    return new Message( $target, $event );
+}
+
+function message_send (Message $message) : bool
+{
+    // Returning the value
+    return websocket_send( json_encode( $message ) );
 }
 
 

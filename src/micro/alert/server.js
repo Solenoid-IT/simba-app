@@ -117,6 +117,32 @@ function parseCookieHeader (value)
 
 
 
+// Returns [Array<Object>]
+function getTargetClients (target)
+{
+    // Returning the value
+    return Object.values( users[ target.tenant ] ).filter
+    (
+        function (client)
+        {
+            // (Getting the value)
+            const match =
+                ( target.hierarchies.includes( client.hierarchyId ) )
+                    ||
+                ( target.users.includes( client.userId ) )
+            ;
+
+
+
+            // Returning the value
+            return match;
+        }
+    )
+    ;
+}
+
+
+
 // Returns [void]
 function send (message, clients)
 {
@@ -167,9 +193,9 @@ server.on('connection', async function (ws, request) {
 
 
         // (Listening for the event)
-        ws.on('message', function (message) {
+        ws.on('message', function (messageData) {
             // (Getting the value)
-            const msg = message.toString();
+            const msg = messageData.toString();
 
 
 
@@ -179,12 +205,12 @@ server.on('connection', async function (ws, request) {
 
 
             // (Getting the value)
-            const record = JSON.parse( msg );
+            const message = JSON.parse( msg );
 
 
 
             // (Sending the message)
-            send( msg, Object.values( users[ record.tenant ] ).filter( function (client) { return client.userId === record.user || client.hierarchyId === 1; } ) )
+            send( JSON.stringify( message.event ), getTargetClients( message.target ) );
         });
     }
     else

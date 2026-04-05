@@ -797,24 +797,32 @@
         });
 
         // (Listening for the event)
-        ws.addEventListener('message', function (event) {
+        ws.addEventListener('message', function (messageEvent) {
             // (Logging the message)
             console.debug( 'Client received a message from alert server' );
 
 
 
             // (Getting the value)
-            const record = FlexObject.expand( JSON.parse( event.data ) );
+            const event = JSON.parse( messageEvent.data );
+
+            switch ( event.type )
+            {
+                case 'activity':
+                    // (Getting the value)
+                    const record = FlexObject.expand( event.data );
 
 
 
-            // (Getting the value)
-            $user['alerts'][ record['id'] ] = record;
+                    // (Getting the value)
+                    $user['alerts'][ record['id'] ] = record;
 
 
 
-            // (Setting the value)
-            alertSignaler = true;
+                    // (Setting the value)
+                    alertSignaler = true;
+                break;
+            }
         });
 
         // (Listening for the event)
