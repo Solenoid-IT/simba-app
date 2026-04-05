@@ -47,6 +47,8 @@ $helper =
 
     x schedule:run
 
+    x log:watch {service=apache|mysql|redis|alert-micro} {type=error|output}
+
 
 
     EOD
@@ -1093,6 +1095,44 @@ switch ( $argv[1] )
     case 'schedule:run':
         // (Executing the command)
         system( "php boot.php Scheduler" );
+    break;
+
+
+
+    case 'log:watch':
+        // (Setting the cwd)
+        chdir( __DIR__ );
+
+
+
+        // (Setting the value)
+        $types =
+        [
+            'error'  => 'err',
+            'output' => 'out'
+        ]
+        ;
+
+
+
+        // (Getting the values)
+        $service = $argv[2];
+        $type    = isset( $argv[3] ) ? $types[ $argv[3] ] : 'err';
+
+
+
+        // (Getting the value)
+        $log_file_path = "/var/log/$service.$type.log";
+
+
+
+        // Printing the value
+        echo "\nWatching the file '$log_file_path' ...\n\n";
+
+
+
+        // (Executing the command)
+        system( "tail -f $log_file_path" );
     break;
 
 
