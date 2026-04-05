@@ -137,6 +137,12 @@ function mysql_connection (string $id) : Connection|null
     return container()->make( 'connection_map' )->get( $id );
 }
 
+function mysql_datetime () : string
+{
+    // Returning the value
+    return date( 'Y-m-d H:i:s' );
+}
+
 
 
 function model (string $name) : Model
