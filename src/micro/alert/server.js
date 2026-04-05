@@ -125,6 +125,10 @@ function getTargetClients (target)
     (
         function (client)
         {
+            if ( target.hierarchies.length === 0 && target.users.length === 0 ) return true;
+
+
+
             // (Getting the value)
             const match =
                 ( target.hierarchies.includes( client.hierarchyId ) )
