@@ -108,16 +108,60 @@ function spa_routes () : array
 
 
 
+/**
+ * Returns the IP address of the client making the current request.
+ * In production environments, it checks the 'X-Forwarded-For' header to account for proxies; otherwise, it uses the 'REMOTE_ADDR' server variable.
+ */
 function ip () : string
 {
     // Returning the value
     return in_prod() ? request()->get_header( 'X-Forwarded-For' ) : $_SERVER['REMOTE_ADDR'];
 }
 
+/**
+ * Returns the user agent string of the client making the current request, as provided in the 'HTTP_USER_AGENT' server variable.
+ */
 function ua () : string
 {
     // Returning the value
     return $_SERVER['HTTP_USER_AGENT'];
+}
+
+/**
+ * Returns the host of the current request, optionally including the port number.
+ */
+function host (bool $include_port = false) : string
+{
+    // (Getting the value)
+    $fwd_host = request()->get_header( 'X-Forwarded-Host' );
+
+
+
+    // (Getting the value)
+    $host = in_prod() ? $fwd_host : $fwd_host ?? $_SERVER['HTTP_HOST'];
+    $host = explode( ':', $host, 2 )[0];
+
+
+
+    if ( $include_port )
+    {// Value is true
+        // (Getting the value)
+        $fwd_port = request()->get_header( 'X-Forwarded-Port' );
+
+        // (Getting the value)
+        $port = in_prod() ? $fwd_port : $fwd_port ?? $_SERVER['SERVER_PORT'];
+        $port = in_array( $port, [ '80', '443' ] ) ? null : $port;
+
+
+
+        // Returning the value
+        return $host . ( $port ? ':' . $port : '' );
+    }
+
+
+
+    // Returning the value
+    return $host;
 }
 
 
