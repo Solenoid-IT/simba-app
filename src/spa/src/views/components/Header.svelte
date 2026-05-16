@@ -20,6 +20,7 @@
     import { user } from '@/stores/user.js';
     import { appData } from '@/stores/appData.js';
     import { idk } from '@/stores/idk.js';
+    import { serverEvent } from '@/stores/serverEvent.js';
 
     import Modal from '@/views/components/Modal.svelte';
     import Form from '@/views/components/Form.svelte';
@@ -799,7 +800,7 @@
         // (Listening for the event)
         ws.addEventListener('message', function (messageEvent) {
             // (Logging the message)
-            console.debug( 'Client received a message from alert server' );
+            //console.debug( 'Client received a message from alert server' );
 
 
 
@@ -807,7 +808,7 @@
             const event = JSON.parse( messageEvent.data );
 
             switch ( event.type )
-            {
+            {// (Message is an Activity)
                 case 'activity':
                     // (Getting the value)
                     const record = FlexObject.expand( event.data );
@@ -822,6 +823,10 @@
                     // (Setting the value)
                     alertSignaler = true;
                 break;
+
+                default:
+                    // (Getting the value)
+                    $serverEvent = event;
             }
         });
 
