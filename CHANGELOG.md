@@ -2,6 +2,11 @@
 
 All changes of code will be reported here.
 
+## [1.1.2] - 2026-05-16
+
+### Fixed
+- gitignore for excluding db migrations head and error files
+
 ## [1.1.1] - 2026-04-05
 
 ### Fixed
