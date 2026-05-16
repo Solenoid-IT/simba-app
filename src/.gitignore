@@ -7,15 +7,15 @@
 /storage
 /views/_cache
 
-/databases/*/error
-/databases/*/merge.sql
-/databases/*/publish
-/databases/*/client.json
+/db_connections/*/error
+/db_connections/*/merge.sql
+/db_connections/*/publish
+/db_connections/*/client.json
 
 /system/_dynamic
 
-/databases/*/*/build.sql
-/databases/*/head
+/db_connections/*/*/build.sql
+/db_connections/*/head
 
 /web/build
 /web/cdn/*
