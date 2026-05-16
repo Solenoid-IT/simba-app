@@ -7,6 +7,9 @@ All changes of code will be reported here.
 ### Added
 - Facility `host` to get current host from request (dev/prod environments)
 
+### Improved
+- Facility `mysql_datetime` with optional time as param
+
 ## [1.1.2] - 2026-05-16
 
 ### Fixed
