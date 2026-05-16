@@ -1,4 +1,0 @@
---------------
-CREATE USER 'simba'@'localhost' IDENTIFIED BY 'pass'
---------------
-
