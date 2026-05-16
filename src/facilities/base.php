@@ -131,16 +131,22 @@ function error_find (int $code) : array|null
 
 
 
+/**
+ * Retrieves a MySQL connection by its identifier.
+ */
 function mysql_connection (string $id) : Connection|null
 {
     // Returning the value
     return container()->make( 'connection_map' )->get( $id );
 }
 
-function mysql_datetime () : string
+/**
+ * Formats a timestamp into a MySQL DATETIME string.
+ */
+function mysql_datetime (?int $time = null) : string
 {
     // Returning the value
-    return date( 'Y-m-d H:i:s' );
+    return date( 'Y-m-d H:i:s', $time );
 }
 
 
