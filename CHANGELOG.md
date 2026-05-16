@@ -2,6 +2,11 @@
 
 All changes of code will be reported here.
 
+## [1.2.0] - XXXX-XX-XX
+
+### Added
+- Facility `host` to get current host from request (dev/prod environments)
+
 ## [1.1.2] - 2026-05-16
 
 ### Fixed
